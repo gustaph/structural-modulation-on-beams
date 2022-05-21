@@ -18,6 +18,7 @@ Y_DISTANCE = 0.25 * HEIGHT
 
 N_ARROWS_MULTIPLIER = 2
 ARROW_WIDTH = 0.4
+UNIF_VAR_SLOPE = 0.1
 
 class Plot:
     def __init__(self, L: float, supports: List[Support], loads: List[Load]):
@@ -89,7 +90,21 @@ class Plot:
                 patch_elements.extend(arrows)
 
             elif load.category == LoadTypes.uniformlyVarying:
-                pass
+                distance = np.abs(load.end - load.start)
+                n_arrows = int(N_ARROWS_MULTIPLIER * distance)
+                arrow_positions = np.linspace(load.start, load.end, n_arrows)
+                
+                ax.plot([load.start, load.end], [Y_DISTANCE-UNIF_VAR_SLOPE, Y_DISTANCE+UNIF_VAR_SLOPE], color="red", lw=3)
+                lengths = np.linspace(Y_DISTANCE-UNIF_VAR_SLOPE, Y_DISTANCE+UNIF_VAR_SLOPE, n_arrows)
+                
+                arrows = [patches.Arrow(x=position, y=length, dx=0, dy=-length, color="red", width=ARROW_WIDTH)
+                          for position, length in zip(arrow_positions, lengths)]
+
+                ax.text((distance / 2) + load.start, Y_DISTANCE + TEXT_SPACE + UNIF_VAR_SLOPE/2, s=text, ha='center', va='top',
+                        weight='normal', fontfamily='monospace', fontsize='large')
+
+
+                patch_elements.extend(arrows)
 
         return patch_elements
 
@@ -100,6 +115,10 @@ if __name__ == '__main__':
     #              Load(20.0, LoadTypes.centered, 10.0),
     #              Load(1000.0, LoadTypes.centered, 15.0)])
 
+    # p = Plot(20.5, [Support(0.0, "fixed")], [
+    #          Load(15.0, LoadTypes.uniformlyDistributed, 5.0, 10.0)])
+    
     p = Plot(20.5, [Support(0.0, "fixed")], [
-             Load(15.0, LoadTypes.uniformlyDistributed, 5.0, 10.0)])
+             Load(15.0, LoadTypes.uniformlyVarying, 2.0, 10.0)])
+    
     p.plot()
