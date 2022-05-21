@@ -23,7 +23,7 @@ UNIF_VAR_SLOPE = 0.1
 class Plot:
     def __init__(self, L: float, supports: List[Support], loads: List[Load]):
         self.L = L
-        self.supports = supports
+        self.supports = supports.values()
         self.loads = loads
 
     def draw(self):
