@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 import numpy as np
 from support import Support, SupportTypes
-from load import Load
+from load import Load, LoadTypes
 from typing import List
 
 # Hyperparameters
@@ -39,13 +39,13 @@ class Plot:
     def _plot_supports(self, ax: plt.Axes):
         patch_elements = []
         for support in self.supports:
-            if support.type == SupportTypes.roller:
+            if support.category == SupportTypes.roller:
                 pass
 
-            elif support.type == SupportTypes.pinned:
+            elif support.category == SupportTypes.pinned:
                 pass
 
-            elif support.type == SupportTypes.fixed:
+            elif support.category == SupportTypes.fixed:
                 alpha = 0.0
                 if support.position == self.L:
                     alpha = -WIDTH/2
@@ -62,17 +62,26 @@ class Plot:
     def _plot_loads(self, ax):
         patch_elements = []
         for load in self.loads:
-            arrow = patches.Arrow(x=load.position, y=Y_DISTANCE,
-                              dx=0, dy=-Y_DISTANCE, color="red", width=0.6, clip_on=False)
-            text = f"{load.magnitude}N"
-            ax.text(load.position, Y_DISTANCE + TEXT_SPACE, s=text, ha='center', va='top',
-                    weight='normal', fontfamily='monospace', fontsize='large')
-            patch_elements.append(arrow)
+            if load.category == LoadTypes.centered:
+                arrow = patches.Arrow(x=load.start, y=Y_DISTANCE,
+                                dx=0, dy=-Y_DISTANCE, color="red", width=0.6, clip_on=False)
+                text = f"{load.magnitude}N"
+                ax.text(load.start, Y_DISTANCE + TEXT_SPACE, s=text, ha='center', va='top',
+                        weight='normal', fontfamily='monospace', fontsize='large')
+                patch_elements.append(arrow)
+                
+            elif load.category == LoadTypes.uniformlyDistributed:
+                pass
+            
+            elif load.category == LoadTypes.uniformlyVarying:
+                pass
 
         return patch_elements
 
 
 if __name__ == '__main__':
     p = p = Plot(20, [Support(0.0, "fixed"), Support(20.0, "fixed")],
-                 [Load(5.0, 15.0), Load(10.0, 20.0), Load(12.0, 250.0)])
+                 [Load(15.0, LoadTypes.centered, 5.0),
+                  Load(20.0, LoadTypes.centered, 10.0),
+                  Load(1000.0, LoadTypes.centered, 15.0)])
     p.plot()
