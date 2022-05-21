@@ -1,4 +1,3 @@
-import numpy as np
 from enum import Enum
 
 
@@ -15,9 +14,9 @@ class Support:
     """
     """
 
-    def __init__(self, position: float, type: SupportTypes) -> None:
+    def __init__(self, position: float, category: SupportTypes) -> None:
         self.position = float(position)
-        self.type = SupportTypes(type)
+        self.category = SupportTypes(category)
 
     def __repr__(self):
-        return f"Support({self.position}, {self.type})"
+        return f"Support({self.position}, {self.category})"
