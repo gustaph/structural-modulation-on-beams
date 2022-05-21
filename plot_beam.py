@@ -26,8 +26,8 @@ class Plot:
         self.supports = supports
         self.loads = loads
 
-    def plot(self):
-        fig, ax = plt.subplots(figsize=(15, 6))
+    def draw(self):
+        fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot([0, self.L], [0, 0], color="black", linewidth=5)
 
         support_patches = self._plot_supports(ax)
@@ -108,17 +108,11 @@ class Plot:
 
         return patch_elements
 
-
 if __name__ == '__main__':
-    # p = Plot(20, [Support(0.0, "fixed"), Support(20.0, "fixed")],
-    #              [Load(15.0, LoadTypes.centered, 5.0),
-    #              Load(20.0, LoadTypes.centered, 10.0),
-    #              Load(1000.0, LoadTypes.centered, 15.0)])
-
-    # p = Plot(20.5, [Support(0.0, "fixed")], [
-    #          Load(15.0, LoadTypes.uniformlyDistributed, 5.0, 10.0)])
+    p = Plot(20, [Support(0.0, "fixed")],
+                 [Load(15.0, LoadTypes.centered, 2.0),
+                 Load(1000.0, LoadTypes.centered, 4.0),
+                 Load(20.0, LoadTypes.uniformlyDistributed, 6.0, 10.0),
+                 Load(1000.0, LoadTypes.uniformlyVarying, 11.0, 20.0)])
     
-    p = Plot(20.5, [Support(0.0, "fixed")], [
-             Load(15.0, LoadTypes.uniformlyVarying, 2.0, 10.0)])
-    
-    p.plot()
+    p.draw()
