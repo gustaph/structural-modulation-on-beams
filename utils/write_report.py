@@ -22,7 +22,7 @@ class Writer:
         eq_V = sym.Eq(V, sym.Integral(q))
         eq_M = sym.Eq(M, sym.Integral(sym.Integral(q)))
         
-        self.write_equation([sym.latex(eq_q) + "; \ \ " + sym.latex(eq_V) + "; \ \ " + sym.latex(eq_M)], box=True)
+        self.write_equation([sym.latex(eq_q) + "; \qquad " + sym.latex(eq_V) + "; \qquad " + sym.latex(eq_M)], box=True)
 
     def add_section(self, name: str, level: int = 1):
         marker = "#" * level + " "
@@ -40,19 +40,9 @@ class Writer:
                     eq = r"\boxed{" + eq + "}"
                 report.write(f"$${eq}$${linesep}")
 
-    def add_image(self, dir: str, caption: str = ""):
+    def add_image(self, dir: str, caption: str = "", scale_width="100%"):
         with open(self.file, 'a') as report:
-            report.write(f"![{caption}]({dir}){linesep}")
+            report.write(f'<p align="center"><img src={str(dir)} width={str(scale_width)}/></p>')
 
     def generate(self):
         pass
-
-
-if __name__ == "__main__":
-    w = Writer()
-    w.add_section("1. Equilibrium Differential Equation", level=2)
-
-    w.write_eq_equations()
-    w.write_content("Thus,")
-
-    w.add_image("../plots/plot_202221212301.jpg", "Test Beam")
