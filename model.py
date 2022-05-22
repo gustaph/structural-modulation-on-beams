@@ -71,7 +71,7 @@ class Model:
         symbolic_q, symbolic_V, symbolic_M = sym.Function("q"), sym.Function("V"), sym.Function("M")
         
         beam_plot_fname = self.beam.draw(save=True)
-        self.writer.add_image("../" + beam_plot_fname, scale=("70%", "45%"))
+        self.writer.add_image("../" + beam_plot_fname, scale_width="90%")
         
         self.writer.add_section("1. Mechanical behavior", level=2)
         beam_loads = ", ".join(["**" + load.category.value.upper() + "**"
@@ -88,6 +88,12 @@ class Model:
         for index, support in enumerate(self.beam.supports.values()):
             self.writer.add_section(f"2.{index + 1}. {support.category.value.upper()}", level=4)
             
+            for position in (0.0, "L"):
+                support = self.beam.supports.get(position, None) # support at `position`
+                support = support.category if support is not None else 0
+                boundaries = BOUNDARY_CONDITIONS.get(support, BOUNDARY_CONDITIONS["free"])
+                self.writer.write_dict_boundaries(boundaries, position)
+            
         self.writer.add_section("3. Apply boundary conditions", level=2)
         
         self.writer.add_section("4. Model plot", level=2)
@@ -96,9 +102,11 @@ class Model:
 if __name__ == '__main__':
     b = Beam(50)
     b.add_load(Load(-1000, LoadTypes.centered, 30))
-    b.draw(False)
-    # model = Model(b)
-    # model.solve()
+    
+    # b.draw(False)
+    
+    model = Model(b)
+    model.solve()
     
     # w.add_section("Equations for Beam(0.5, Load(1000, LoadTypes.centered, 0.3))")
     # w.write_equation([sym.latex(model.M),

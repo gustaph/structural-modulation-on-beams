@@ -66,11 +66,3 @@ class Beam:
         plot_object.draw(save)
         
         return plot_object.img_filename
-
-if __name__ == "__main__":
-    b = Beam(10.0)
-
-    b.add_load(Load(-15, LoadTypes.centered, 2))
-    b.add_load(Load(15, LoadTypes.centered, 5))
-    b.add_load(Load(15, LoadTypes.uniformlyVarying, 6.1, 7.8))    
-    b.draw(False)
