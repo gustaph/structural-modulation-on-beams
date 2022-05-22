@@ -44,8 +44,9 @@ class Beam:
         self.taken_positions.append((load.start, load.end if load.end else load.start))
         self.loads.append(load)
 
-    def add_support(self, support: Support) -> None:
-        assert (support.category == SupportTypes.fixed) and support.position in (0.0, self.L), f"A support can only be added at the edges of the beam."
+    def add_support(self, support: Support) -> None:        
+        if (support.category == SupportTypes.fixed) and support.position in (0.0, self.L):
+            raise ValueError(f"A FIXED support can only be added at the edges of the beam.")
         assert 0 <= support.position <= self.L, f"{support} position must be within the limits of the beam."
         assert not self.supports.__contains__(support.position), f"Position {support.position} already has a support"
         self.supports[support.position] = support
