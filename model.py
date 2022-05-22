@@ -70,10 +70,13 @@ class Model:
         x, c1, c2 = sym.symbols("x C(1:3)")
         symbolic_q, symbolic_V, symbolic_M = sym.Function("q"), sym.Function("V"), sym.Function("M")
         
+        beam_plot_fname = self.beam.draw(save=True)
+        self.writer.add_image("../" + beam_plot_fname, scale=("70%", "45%"))
+        
         self.writer.add_section("1. Mechanical behavior", level=2)
         beam_loads = ", ".join(["**" + load.category.value.upper() + "**"
                                 for load in self.beam.loads])
-        self.writer.write_content("Beam with loads: " + beam_loads + ".")
+        self.writer.write_content("Beam with load(s): " + beam_loads + ".")
         self.writer.write_content("Considering the differential equations of equilibrium:")
         self.writer.write_eq_equations()
         self.writer.write_content("Thus,")
@@ -85,13 +88,17 @@ class Model:
         for index, support in enumerate(self.beam.supports.values()):
             self.writer.add_section(f"2.{index + 1}. {support.category.value.upper()}", level=4)
             
+        self.writer.add_section("3. Apply boundary conditions", level=2)
+        
+        self.writer.add_section("4. Model plot", level=2)
+            
 
 if __name__ == '__main__':
-    b = Beam(0.5)
-    b.add_load(Load(-1000, LoadTypes.centered, 0.3))
-    
-    model = Model(b)
-    model.solve()
+    b = Beam(50)
+    b.add_load(Load(-1000, LoadTypes.centered, 30))
+    b.draw(False)
+    # model = Model(b)
+    # model.solve()
     
     # w.add_section("Equations for Beam(0.5, Load(1000, LoadTypes.centered, 0.3))")
     # w.write_equation([sym.latex(model.M),

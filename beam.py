@@ -64,6 +64,8 @@ class Beam:
     def draw(self, save=False):
         plot_object = Plot(self.L, self.supports, self.loads)
         plot_object.draw(save)
+        
+        return plot_object.img_filename
 
 if __name__ == "__main__":
     b = Beam(10.0)
