@@ -70,10 +70,14 @@ class Plot:
         patch_elements = []
         for load in self.loads:
             text = f"{load.magnitude}N"
+            if load.magnitude < 0:
+                y, dy = Y_DISTANCE, -Y_DISTANCE
+            else:
+                y, dy = 0, Y_DISTANCE
 
             if load.category == LoadTypes.centered:
-                arrow = patches.Arrow(x=load.start, y=Y_DISTANCE,
-                                      dx=0, dy=-Y_DISTANCE, color="red", width=ARROW_WIDTH)
+                arrow = patches.Arrow(x=load.start, y=y, dx=0, dy=dy,
+                                      color="red", width=ARROW_WIDTH)
 
                 ax.text(load.start, Y_DISTANCE + TEXT_SPACE, s=text, ha='center', va='top',
                         weight='normal', fontfamily='monospace', fontsize='large')
