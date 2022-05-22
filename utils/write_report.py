@@ -9,11 +9,20 @@ class Writer:
     def __init__(self):
         self.file = f"reports/report_{datetime.now().strftime('%Y%d%d%H%M')}.md"
         self._write_header()
-                
-                
+
     def _write_header(self):
         with open(self.file, 'w') as report:
             report.write("<h1 align='center'>Report: Structural Modeling by Descontinuous Functions</h1>" + linesep + "---" + linesep)
+
+    def write_eq_equations(self):
+        x = sym.Symbol("x")
+        q, V, M = sym.Function("q")(x), sym.Function("V")(x), sym.Function("M")(x)
+    
+        eq_q = sym.Eq(q, M.diff(x, x))
+        eq_V = sym.Eq(V, sym.Integral(q))
+        eq_M = sym.Eq(M, sym.Integral(sym.Integral(q)))
+        
+        self.write_equation([sym.latex(eq_q) + "; \ \ " + sym.latex(eq_V) + "; \ \ " + sym.latex(eq_M)], box=True)
 
     def add_section(self, name: str, level: int = 1):
         marker = "#" * level + " "
@@ -24,11 +33,12 @@ class Writer:
         with open(self.file, "a") as report:
             report.write(content + linesep)
 
-    def write_equation(self, equation: list):        
+    def write_equation(self, equation: list, box: bool = False):
         with open(self.file, "a") as report:
             for eq in equation:
-                report.write(f"$${eq}$${linesep}")               
-            
+                if box:
+                    eq = r"\boxed{" + eq + "}"
+                report.write(f"$${eq}$${linesep}")
 
     def add_image(self, dir: str, caption: str = ""):
         with open(self.file, 'a') as report:
@@ -40,13 +50,9 @@ class Writer:
 
 if __name__ == "__main__":
     w = Writer()
-    w.add_section("Test")
-    w.write_content("this is a guided markdown test")
-    
-    eqs = [sym.latex(10 * sym.SingularityFunction(sym.Symbol('x'), -3, 1)),
-           "V_{sphere} = \\frac{4}{3}\pi r^3"]
-    
-    w.add_section("2. LaTeX equations in Markdown", level=3)
-    w.write_equation(eqs)
-    
+    w.add_section("1. Equilibrium Differential Equation", level=2)
+
+    w.write_eq_equations()
+    w.write_content("Thus,")
+
     w.add_image("../plots/plot_202221212301.jpg", "Test Beam")
