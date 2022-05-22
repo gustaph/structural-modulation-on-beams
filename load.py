@@ -15,10 +15,10 @@ class Load:
     """
 
     def __init__(self, magnitude: float, category: LoadTypes, start: float, end: float = None):
-        self.start = float(start)
-        self.end = float(end) if end else None
         self.magnitude = float(magnitude)
         self.category = category
+        self.start = float(start)
+        self.end = float(end) if end else None
 
         self._handle_invalid_inputs()
 

@@ -8,10 +8,12 @@ from os import linesep, path
 class Writer:
     def __init__(self):
         self.file = f"reports/report_{datetime.now().strftime('%Y%d%d%H%M')}.md"
-        
-        if path.exists(self.file):
-            with open(self.file, 'w') as report:
-                report.write("")
+        self._write_header()
+                
+                
+    def _write_header(self):
+        with open(self.file, 'w') as report:
+            report.write("<h1 align='center'>Report: Structural Modeling by Descontinuous Functions</h1>" + linesep + "---" + linesep)
 
     def add_section(self, name: str, level: int = 1):
         marker = "#" * level + " "
