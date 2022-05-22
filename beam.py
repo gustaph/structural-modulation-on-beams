@@ -61,14 +61,13 @@ class Beam:
         support = self.supports.pop(position)
         print(f"[*] {support} removed from Beam.")
 
-    def draw(self):
+    def draw(self, save=False):
         plot_object = Plot(self.L, self.supports, self.loads)
-        plot_object.draw()
+        plot_object.draw(save)
 
-
-if __name__ == "__main__":
+if __name__ == "__main__":  
     b = Beam(10.0)
 
     b.add_load(Load(15, LoadTypes.centered, 2))
     b.add_load(Load(15, LoadTypes.uniformlyVarying, 6.1, 7.8))    
-    b.draw()
+    b.draw(True)

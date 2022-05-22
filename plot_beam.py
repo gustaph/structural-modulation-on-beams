@@ -4,6 +4,8 @@ import numpy as np
 from support import Support, SupportTypes
 from load import Load, LoadTypes
 from typing import List
+from datetime import datetime
+
 
 # Hyperparameters
 WIDTH = -2
@@ -26,7 +28,7 @@ class Plot:
         self.supports = supports.values()
         self.loads = loads
 
-    def draw(self):
+    def draw(self, save=False):
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot([0, self.L], [0, 0], color="black", linewidth=5)
 
@@ -35,6 +37,9 @@ class Plot:
 
         for patch in support_patches + load_patches:
             ax.add_patch(patch)
+            
+        if save:
+            plt.savefig(f"plots/plot_{datetime.now().strftime('%Y%d%d%H%M')}.jpg")
 
         plt.show()
 
@@ -107,12 +112,3 @@ class Plot:
                 patch_elements.extend(arrows)
 
         return patch_elements
-
-if __name__ == '__main__':
-    p = Plot(20, [Support(0.0, "fixed")],
-                 [Load(15.0, LoadTypes.centered, 2.0),
-                 Load(1000.0, LoadTypes.centered, 4.0),
-                 Load(20.0, LoadTypes.uniformlyDistributed, 6.0, 10.0),
-                 Load(1000.0, LoadTypes.uniformlyVarying, 11.0, 20.0)])
-    
-    p.draw()
