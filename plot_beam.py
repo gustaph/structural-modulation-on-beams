@@ -12,6 +12,8 @@ WIDTH = -2
 HEIGHT = 1
 LINE_WIDTH = 5
 
+SUPP_FIXED_WIDTH_PERCENT = 0.1
+
 HATCH_FIXED = "//"
 HATCH_ROLLER = "OO"
 
@@ -19,7 +21,7 @@ TEXT_SPACE = 0.06 * HEIGHT
 Y_DISTANCE = 0.25 * HEIGHT
 
 N_ARROWS_MULTIPLIER = 2
-ARROW_WIDTH = 0.4
+ARROW_WIDTH_PERCENT = 0.04
 UNIF_VAR_SLOPE = 0.1
 
 class Plot:
@@ -27,9 +29,12 @@ class Plot:
         self.L = L
         self.supports = supports.values()
         self.loads = loads
+        self.img_filename = f"plots/plot_{datetime.now().strftime('%Y%d%d%H%M')}.jpg"
 
     def draw(self, save=False):
         fig, ax = plt.subplots(figsize=(10, 5))
+        ax.set_yticks([])
+        
         ax.plot([0, self.L], [0, 0], color="black", linewidth=5)
 
         support_patches = self._plot_supports(ax)
@@ -39,9 +44,10 @@ class Plot:
             ax.add_patch(patch)
             
         if save:
-            plt.savefig(f"plots/plot_{datetime.now().strftime('%Y%d%d%H%M')}.jpg")
-
-        plt.show()
+            plt.savefig(self.img_filename, dpi=800)
+            plt.close(fig)
+        else:
+            plt.show()
 
     def _plot_supports(self, ax: plt.Axes):
         patch_elements = []
@@ -58,7 +64,7 @@ class Plot:
                     alpha = -WIDTH/2
 
                 patch = patches.Rectangle((support.position + alpha, -HEIGHT/2),
-                                          width=WIDTH,
+                                          width=-SUPP_FIXED_WIDTH_PERCENT * self.L,
                                           height=HEIGHT,
                                           hatch=HATCH_FIXED,
                                           fill=False)
@@ -77,7 +83,7 @@ class Plot:
 
             if load.category == LoadTypes.centered:
                 arrow = patches.Arrow(x=load.start, y=y, dx=0, dy=dy,
-                                      color="red", width=ARROW_WIDTH)
+                                      color="red", width=ARROW_WIDTH_PERCENT * self.L)
 
                 ax.text(load.start, Y_DISTANCE + TEXT_SPACE, s=text, ha='center', va='top',
                         weight='normal', fontfamily='monospace', fontsize='large')
@@ -88,7 +94,8 @@ class Plot:
                 n_arrows = int(N_ARROWS_MULTIPLIER * distance)
                 arrow_positions = np.linspace(load.start, load.end, n_arrows)
                 
-                arrows = [patches.Arrow(x=position, y=Y_DISTANCE, dx=0, dy=-Y_DISTANCE, color="red", width=ARROW_WIDTH)
+                arrows = [patches.Arrow(x=position, y=Y_DISTANCE, dx=0, dy=-Y_DISTANCE,
+                                        color="red", width=ARROW_WIDTH_PERCENT * self.L)
                           for position in arrow_positions]
 
                 ax.text((distance / 2) + load.start, Y_DISTANCE + TEXT_SPACE, s=text, ha='center', va='top',
@@ -106,7 +113,8 @@ class Plot:
                 ax.plot([load.start, load.end], [Y_DISTANCE-UNIF_VAR_SLOPE, Y_DISTANCE+UNIF_VAR_SLOPE], color="red", lw=3)
                 lengths = np.linspace(Y_DISTANCE-UNIF_VAR_SLOPE, Y_DISTANCE+UNIF_VAR_SLOPE, n_arrows)
                 
-                arrows = [patches.Arrow(x=position, y=length, dx=0, dy=-length, color="red", width=ARROW_WIDTH)
+                arrows = [patches.Arrow(x=position, y=length, dx=0, dy=-length,
+                                        color="red", width=ARROW_WIDTH_PERCENT * self.L)
                           for position, length in zip(arrow_positions, lengths)]
 
                 ax.text((distance / 2) + load.start, Y_DISTANCE + TEXT_SPACE + UNIF_VAR_SLOPE/2, s=text, ha='center', va='top',
