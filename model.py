@@ -1,7 +1,8 @@
+from typing import Tuple
 from beam import Beam
 import numpy as np
 import sympy as sym
-from support import SupportTypes
+from support import Support, SupportTypes
 from load import Load, LoadTypes
 
 from utils.write_report import Writer
@@ -64,6 +65,15 @@ class Model:
         
         return q, M, V
     
+    def _get_best_position(self, model_data: Tuple[dict]):
+        """
+        [(position, support, boundaries), (...), ...]
+        """
+        
+        values = [list(position[2].values()) for position in model_data]
+        index = np.argmax([np.sum(np.array(module) != "?") for module in values])
+        return model_data[index][0], model_data[index][1]
+    
     def solve(self):
         
         # Variables & Functions
@@ -88,13 +98,16 @@ class Model:
         ])
         
         self.writer.add_section("2. Boundary conditions", level=2)
+        
+        model_boundaries = []
         for index, support in enumerate(self.beam.supports.values()):
             self.writer.add_section(f"2.{index + 1}. {support.category.value.upper()}", level=4)
             
             for position in (0.0, "L"):
                 support = self.beam.supports.get(position, None) # support at `position`
-                support = support.category if support is not None else 0
-                boundaries = BOUNDARY_CONDITIONS.get(support, BOUNDARY_CONDITIONS["free"])
+                support = support.category if support is not None else "free"
+                boundaries = BOUNDARY_CONDITIONS[support]
+                model_boundaries.append((position, support, boundaries))
                 self.writer.write_dict_boundaries(boundaries, position)
             
         self.writer.add_section("3. Apply boundary conditions", level=2)
@@ -124,33 +137,45 @@ class Model:
         self.writer.write_equation([sym.latex(m_x)], box=True)
         self.writer.write_content("---")
         
+        best_position, support_type = self._get_best_position(model_boundaries)
+        self.writer.write_dict_boundaries(BOUNDARY_CONDITIONS[support_type], best_position)
+        position = self.beam.L if best_position == "L" else best_position
+        
+        vx_at_bp = v_x.subs(x, position) # V(x) at best position
+        c1_value = sym.solve(vx_at_bp.args[1], c1)[0]
+        
+        mx_at_bp = m_x.subs({x: position, c1: c1_value}) # M(x) at best position
+        c2_value = sym.solve(mx_at_bp.args[1], c2)[0]
+        
+        with sym.evaluate(False):
+            self.writer.write_equation([
+                f"{sym.latex(v_x.subs(x, position))} = {BOUNDARY_CONDITIONS[support_type]['V']}"
+            ])
+        self.writer.write_equation([f"\Rightarrow {sym.latex(vx_at_bp)}"])
+        self.writer.write_equation([f"{sym.latex(sym.Eq(c1, c1_value))}"], box=True)
+        
+        with sym.evaluate(False):
+            self.writer.write_equation([
+                f"{sym.latex(m_x.subs({x: position, c1: c1_value}))} = {BOUNDARY_CONDITIONS[support_type]['M']}"
+            ])
+        self.writer.write_equation([f"\Rightarrow {sym.latex(mx_at_bp)}"])
+        self.writer.write_equation([f"{sym.latex(sym.Eq(c2, c2_value))}"], box=True)
+        
         self.writer.add_section("4. Model plot", level=2)
         # TODO
             
 
 if __name__ == '__main__':
-    b = Beam(0.5)
+    b = Beam(7.0)
     
-    b.add_load(Load(-1000, LoadTypes.centered, 0.3))
+    b.remove_support(0.0)
     
-    # b.remove_support(0.0)
-    # b.add_support(Support(0.0, SupportTypes.pinned))
-    # b.add_support(Support(4.0, SupportTypes.roller))
-    # b.add_support(Support(6.0, SupportTypes.roller))
-    # b.add_support(Support(10.0, SupportTypes.roller))
+    b.add_support(Support(0.0, SupportTypes.pinned))
+    b.add_support(Support(7.0, SupportTypes.pinned))
     
-    # b.add_load(Load(-1000, LoadTypes.centered, 1))
-    # b.add_load(Load(-1500, LoadTypes.centered, 2))
-    # b.add_load(Load(-1200, LoadTypes.centered, 3))
-    
-    # b.add_load(Load(-20, LoadTypes.uniformlyVarying, 7, end=4))
+    b.add_load(Load(-100, LoadTypes.uniformlyDistributed, 2, end=7))
     
     # b.draw(False)
     
     model = Model(b)
     model.solve()
-    
-    # w.add_section("Equations for Beam(0.5, Load(1000, LoadTypes.centered, 0.3))")
-    # w.write_equation([sym.latex(model.M),
-    #                   sym.latex(model.V),
-    #                   sym.latex(model.q)])
