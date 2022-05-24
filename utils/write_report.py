@@ -36,9 +36,9 @@ class Writer:
     def _format_equation(self, equation: str, box: bool = False, center: bool = True):
         sign = "$$" if center else "$"
         if box:
-            equation = r"\boxed{" + equation + "}"
+            equation = r"\boxed{ " + equation + " } "
         
-        return f"{sign}{equation}{sign}{linesep}"
+        return f"{sign}{equation}{sign}" + linesep
 
     def write_equation(self, equation: list, box: bool = False, center: bool = True):
         with open(self.file, "a") as report:
