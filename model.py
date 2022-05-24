@@ -65,6 +65,7 @@ class Model:
         
         return q, M, V
     
+    # TODO choose the right values to evaluate
     def _get_best_position(self, model_data: Tuple[dict]):
         """
         [(position, support, boundaries), (...), ...]
@@ -85,6 +86,7 @@ class Model:
         
         beam_plot_fname = self.beam.draw(save=True)
         self.writer.add_image("../" + beam_plot_fname, scale_width="90%")
+        self.writer.write_content(" ")
         
         self.writer.add_section("1. Mechanical behavior", level=2)
         beam_loads = ", ".join(["**" + load.category.value.upper() + "**"
