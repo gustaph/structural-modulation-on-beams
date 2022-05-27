@@ -1,33 +1,29 @@
-from typing import Tuple
+from typing import List, Tuple
 from beam import Beam
 import numpy as np
 import sympy as sym
 from support import Support, SupportTypes
 from load import Load, LoadTypes
-
 from utils.write_report import Writer
+from collections import ChainMap
 
 
 BOUNDARY_CONDITIONS = {
     SupportTypes.fixed: {
         "M": "?",
-        "V": "?",
-        "N": "?"
+        "V": "?"
     },
     SupportTypes.roller: {
-        "M": 0.0,
-        "V": "?",
-        "N": "?"
+        "M": "?",
+        "V": 0.0
     },
     SupportTypes.pinned: {
-        "M": "?",
-        "V": 0.0,
-        "N": 0.0
+        "M": 0.0,
+        "V": "?"
     },
     "free": {
         "M": 0.0,
-        "V": 0.0,
-        "N": "?"
+        "V": 0.0
     }
 }
 
@@ -65,24 +61,85 @@ class Model:
         
         return q, M, V
     
-    # TODO choose the right values to evaluate
-    def _get_best_position(self, model_data: Tuple[dict]):
+    def _get_best_position(self, conditions: List[Tuple[int, dict]]):
         """
-        [(position, support, boundaries), (...), ...]
+        [(position, {'M': 'Value', 'V': 'Value'}), ...]
+        
+        * Conditions:
+            1) Two equal forces equals zero at different positions.
+                - [M(x->0):0; M(x->L):0] or [V(x->0):0; V(x->L):0]
+            2) Two differente forces equals zero at the same position
+                - [M(x->0):0; V(x->L):0] or [M(x->L):0; V(x->0):0]
+                
+        * Returns:
+            [position, [[force: 0.0], [force: 0.0], ...]]
         """
         
-        values = [list(position[2].values()) for position in model_data]
-        index = np.argmax([np.sum(np.array(module) != "?") for module in values])
-        return model_data[index][0], model_data[index][1]
+        valid_forces = conditions[0][1].keys()
+        matrix_bounds = np.array([bounds for cond in conditions for bounds in cond[1].items()])
+        positions = np.array([position[0] for position in conditions])
+        
+        auxiliar_f = lambda matrix: matrix[0] & matrix[1]
+        result = np.zeros((len(valid_forces), matrix_bounds.shape[0]), dtype=bool)
+
+        for index, force in enumerate(valid_forces):
+            condition = np.transpose(matrix_bounds == [force, "0.0"])
+            result[index, :] = auxiliar_f(condition)
+
+        count_valid = np.sum(result, axis=1) # [M, V]
+        if np.sum(count_valid) <= 1: return [None, None]
+        
+        indices_M = np.argwhere(np.transpose(result[0]))[:2]
+        indices_V = np.argwhere(np.transpose(result[1]))[:2]
+        indices_pos_M = (np.squeeze(indices_M) / positions.shape[0]).astype(int)
+        indices_pos_V = (np.squeeze(indices_V) / positions.shape[0]).astype(int)
+        
+        if count_valid[0] == 0:
+            return positions[indices_pos_V], np.squeeze(matrix_bounds[indices_V])
+
+        if count_valid[1] == 0:
+            return positions[indices_pos_M], np.squeeze(matrix_bounds[indices_M])
+        
+        print("AOOOBAAAA")
+        indices = np.unique(np.array([indices_pos_M, indices_pos_V]))
+        values = np.sort([
+            np.squeeze(matrix_bounds[indices_M][0]),
+            np.squeeze(matrix_bounds[indices_V][0])
+        ], axis=0)[::-1]
+        return positions[indices], values
+        
+    def solve_for_force(self, force:str, equations:dict, position:int, subs={}):
+        x = sym.Symbol("x")
+        equation = equations[force]
+        force = sym.Function(force)(x)
+        result = {}
+        
+        force_at_pos = equation.subs(dict(ChainMap({x: position}, subs)))
+        variables = list(force_at_pos.atoms(sym.Symbol))
+        
+        for var in variables:
+            result[var] = sym.solve(force_at_pos.args[1], var, rational=False)[0]
+            
+        if len(result) > 0:
+            with sym.evaluate(False):
+                self.writer.write_equation([
+                    f"{sym.latex(equation.subs(dict(ChainMap({x: position}, subs))))} = {sym.latex(0.0)}"
+                ])
+            self.writer.write_equation([f"{sym.latex(force_at_pos.args[1])} = 0.0"])
+            
+            for var, value in result.items():
+                self.writer.write_equation([f"{sym.latex(sym.Eq(var, value))}"], box=True)
+        
+        return result
     
     def solve(self):
         
         # Variables & Functions
         x, c1, c2 = sym.symbols("x C(1:3)")
-        # symbolic_q, symbolic_V, symbolic_M = sym.Function("q")(x), sym.Function("V")(x), sym.Function("M")(x)
-        symbolic_q = sym.Function("q")(x)
-        symbolic_V = sym.Function("V")(x)
-        symbolic_M = sym.Function("M")(x)
+        symbolic_q, symbolic_V, symbolic_M = sym.symbols("q V M", cls=sym.Function)
+        symbolic_q = symbolic_q(x)
+        symbolic_V = symbolic_V(x)
+        symbolic_M = symbolic_M(x)
         
         beam_plot_fname = self.beam.draw(save=True)
         self.writer.add_image("../" + beam_plot_fname, scale_width="90%")
@@ -101,16 +158,16 @@ class Model:
         
         self.writer.add_section("2. Boundary conditions", level=2)
         
-        model_boundaries = []
+        position_conditions = []
         for index, support in enumerate(self.beam.supports.values()):
-            self.writer.add_section(f"2.{index + 1}. {support.category.value.upper()}", level=4)
+            self.writer.add_section(f"2.{index + 1}. {support.category.value.upper()}({support.position})", level=4)
             
-            for position in (0.0, "L"):
-                support = self.beam.supports.get(position, None) # support at `position`
-                support = support.category if support is not None else "free"
-                boundaries = BOUNDARY_CONDITIONS[support]
-                model_boundaries.append((position, support, boundaries))
-                self.writer.write_dict_boundaries(boundaries, position)
+            conditions = BOUNDARY_CONDITIONS[support.category]
+            position_conditions.append((support.position, conditions))
+            self.writer.write_dict_boundaries(conditions, support.position if support.position != self.beam.L else "L")
+
+        if not self.beam.supports.__contains__(self.beam.L):
+            position_conditions.append((self.beam.L, BOUNDARY_CONDITIONS["free"]))
             
         self.writer.add_section("3. Apply boundary conditions", level=2)
         
@@ -125,7 +182,7 @@ class Model:
             f"\Rightarrow {sym.latex(sym.Eq(sym.Integral(m_diff, x), sym.Integral(self.q.args[1], x)))}"
         ])
         
-        v_x = sym.dsolve(sym.Eq(v_diff, self.q.args[1])) # V(x)
+        v_x = sym.dsolve(sym.Eq(v_diff, self.q.args[1]), rational=False) # V(x)
         self.writer.write_equation([f"{sym.latex(symbolic_M.diff(x))} = {sym.latex(v_x)}"], box=True)
         self.writer.write_content("---")
         
@@ -135,47 +192,37 @@ class Model:
             f"\Rightarrow {sym.latex(sym.Eq(sym.Integral(m_diff_2, x), sym.expand(sym.Integral(v_x.args[1], x))))}"
         ])
         
-        m_x = sym.dsolve(sym.Eq(symbolic_M.diff(x), v_x.args[1])) # M(x)
+        m_x = sym.dsolve(sym.Eq(symbolic_M.diff(x), v_x.args[1]), rational=False) # M(x)
         self.writer.write_equation([sym.latex(m_x)], box=True)
         self.writer.write_content("---")
         
-        best_position, support_type = self._get_best_position(model_boundaries)
-        self.writer.write_dict_boundaries(BOUNDARY_CONDITIONS[support_type], best_position)
-        position = self.beam.L if best_position == "L" else best_position
+        equations = {"M": m_x, "V": v_x}
         
-        vx_at_bp = v_x.subs(x, position) # V(x) at best position
-        c1_value = sym.solve(vx_at_bp.args[1], c1)[0]
+        best_positions, bounds = self._get_best_position(position_conditions)
+        print("best_positions", best_positions)
+        print("bounds\n", bounds)
         
-        mx_at_bp = m_x.subs({x: position, c1: c1_value}) # M(x) at best position
-        c2_value = sym.solve(mx_at_bp.args[1], c2)[0]
-        
-        with sym.evaluate(False):
-            self.writer.write_equation([
-                f"{sym.latex(v_x.subs(x, position))} = {BOUNDARY_CONDITIONS[support_type]['V']}"
-            ])
-        self.writer.write_equation([f"\Rightarrow {sym.latex(vx_at_bp)}"])
-        self.writer.write_equation([f"{sym.latex(sym.Eq(c1, c1_value))}"], box=True)
-        
-        with sym.evaluate(False):
-            self.writer.write_equation([
-                f"{sym.latex(m_x.subs({x: position, c1: c1_value}))} = {BOUNDARY_CONDITIONS[support_type]['M']}"
-            ])
-        self.writer.write_equation([f"\Rightarrow {sym.latex(mx_at_bp)}"])
-        self.writer.write_equation([f"{sym.latex(sym.Eq(c2, c2_value))}"], box=True)
+        constants = {}
+        for position in best_positions:
+            for bound in bounds:
+                self.writer.write_dict_boundaries({bound[0]: bound[1]}, "L" if position == self.beam.L else position)
+                constants.update(self.solve_for_force(bound[0], equations, position, constants))
+            
+        print(constants)
         
         self.writer.add_section("4. Model plot", level=2)
         # TODO
             
 
 if __name__ == '__main__':
-    b = Beam(7.0)
+    # b = Beam(5.0)
+    # b.remove_support(0.0)
+    # b.add_support(Support(0.0, SupportTypes.pinned))
+    # b.add_support(Support(5.0, SupportTypes.pinned))
+    # b.add_load(Load(-100, LoadTypes.uniformlyDistributed, 2, end=5))
     
-    b.remove_support(0.0)
-    
-    b.add_support(Support(0.0, SupportTypes.pinned))
-    b.add_support(Support(7.0, SupportTypes.pinned))
-    
-    b.add_load(Load(-100, LoadTypes.uniformlyDistributed, 2, end=7))
+    b = Beam(0.5)
+    b.add_load(Load(-1000, LoadTypes.centered, 0.3))
     
     # b.draw(False)
     

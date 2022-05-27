@@ -53,7 +53,7 @@ class Writer:
         self.write_equation([f'x \longrightarrow {x}'], box=True, center=False)
         
         equations = [f'{force}(x \longrightarrow {x}) = {value}'
-                     for force, value in list(dict_boundaries.items())[:-1]]
+                     for force, value in list(dict_boundaries.items())]
         equations = "$$" + ' \qquad \qquad '.join(equations) + "$$"
         
         self.write_content(f"> {equations}")
