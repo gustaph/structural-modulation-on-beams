@@ -5,6 +5,7 @@ import sympy as sym
 from support import Support, SupportTypes
 from load import Load, LoadTypes
 from utils.write_report import Writer
+from plot_beam import Plot
 from collections import ChainMap
 
 
@@ -39,6 +40,7 @@ class Model:
     def __init__(self, beam):
         self.writer = Writer()
         self.beam = beam
+        self.plotter = Plot(self.beam.L, self.beam.supports, self.beam.loads)
         self.q, self.M, self.V = self._define_equations()
 
     def _define_equations(self):
@@ -140,8 +142,8 @@ class Model:
         symbolic_V = symbolic_V(x)
         symbolic_M = symbolic_M(x)
         
-        beam_plot_fname = self.beam.draw(save=True)
-        self.writer.add_image("../" + beam_plot_fname, scale_width="90%")
+        self.plotter.plot_model(save=True)
+        self.writer.add_image("../" + self.plotter.beam_filename, scale_width="90%")
         self.writer.write_content(" ")
         
         self.writer.add_section("1. Mechanical behavior", level=2)
@@ -216,8 +218,22 @@ class Model:
         print(constants)
         
         self.writer.add_section("4. Model plot", level=2)
-        # TODO
-            
+        
+        modules = [{"SingularityFunction": lambda x, a, e: (x - a)**e * (x > a)}, "numpy"]
+        final_v_x = v_x.subs(constants)
+        final_m_x = m_x.subs(constants)
+        function_v_x = sym.lambdify(x, expr=final_v_x.args[1], modules=modules)
+        function_m_x = sym.lambdify(x, expr=final_m_x.args[1], modules=modules)
+        
+        self.writer.write_equation([sym.latex(final_m_x) + "; \qquad " + sym.latex(final_v_x)], box=True)
+        
+        x_points = np.linspace(0, self.beam.L, int(self.beam.L * 100))
+        internal_strain = (x_points, function_v_x(x_points), function_m_x(x_points))
+        
+        self.plotter.plot_model(internal_strain, save=True)
+        self.writer.add_image("../" + self.plotter.strain_filename)
+        self.writer.write_content(" ")
+        
 
 if __name__ == '__main__':
     b = Beam(5.0)

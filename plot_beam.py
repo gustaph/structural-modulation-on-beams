@@ -12,7 +12,7 @@ from itertools import cycle
 WIDTH = -2
 HEIGHT = 2
 LINE_WIDTH = 5
-FIG_YLIM = (-(HEIGHT/2) * 1.1, (HEIGHT/2) * 1.1)
+FIG_YLIM = (-(HEIGHT/2) * 0.5, (HEIGHT/2) * 0.8)
 COORD_X_SCALE = 0.02
 COORD_Y_SCALE = 0.15
 
@@ -23,7 +23,7 @@ SECONDARY_COLOR = "black"
 HATCH_SUPPORTS = "//"
 
 TEXT_SPACE = 0.06 * HEIGHT
-Y_DISTANCE = 0.25 * HEIGHT
+Y_DISTANCE = 0.20 * HEIGHT
 
 N_ARROWS_SCALE = 2
 ARROW_WIDTH_PERCENT = 0.04
@@ -35,25 +35,64 @@ class Plot:
         self.L = L
         self.supports = supports.values()
         self.loads = loads
-        self.img_filename = f"plots/plot_{datetime.now().strftime('%Y%d%d%H%M')}.jpg"
-
-    def draw(self, save=False):
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.set_ylim(FIG_YLIM)
-        ax.set_yticks([])
-
-        ax.plot([0, self.L], [0, 0], color="black", linewidth=5)
-        support_patches = self._plot_supports(ax)
-        load_patches = self._plot_loads(ax)
-
-        for patch in support_patches + load_patches:
-            ax.add_patch(patch)
-
-        if save:
-            plt.savefig(self.img_filename, dpi=800)
-            plt.close(fig)
+        self.x_positions = np.unique([l.start for l in self.loads] + [l.end for l in self.loads])
+        self.ax_beam = None
+        
+        now = datetime.now().strftime('%Y%d%d%H%M')
+        self.beam_filename = f"plots/beam/plot_{now}.jpg"
+        self.strain_filename = f"plots/strain/plot_{now}.jpg"
+    
+    def plot_model(self, internal_strain=None, save=False):
+        plot_complete_model = False
+        if internal_strain is not None:
+            assert len(internal_strain) == 3, "`internal_strain` must contain 3 elements (x, shear, bending)"
+            figsize = (10, 8)
+            x, shear, bending = internal_strain
+            plot_complete_model = True
+            nrows, ncols = 3, 1
+            gridspec_kw = {"height_ratios": [1, 0.5, 0.5]}
+            
         else:
-            plt.show()
+            figsize = (10, 5)
+            nrows, ncols = 1, 1
+            gridspec_kw = {}
+            
+        fig, axes = plt.subplots(nrows, ncols, figsize=figsize, sharex=True, squeeze=False,
+                                 constrained_layout=True, gridspec_kw=gridspec_kw)
+        axes = axes.flatten()
+        
+        axes[0].set_ylim(FIG_YLIM)
+        axes[0].plot([0, self.L], [0, 0], color="black", linewidth=5)
+        axes[0].set_xticks(list(axes[0].get_xticks()) + self.x_positions.tolist())
+
+        support_patches = self._plot_supports(axes[0])
+        load_patches = self._plot_loads(axes[0])
+        for patch in support_patches + load_patches:
+            axes[0].add_patch(patch)
+            
+        if plot_complete_model:
+            axes[1].plot(x, shear, color="royalblue")
+            axes[1].fill_between(x, shear, alpha=0.3, color="royalblue")
+            
+            axes[2].plot(x, bending, color="salmon")
+            axes[2].fill_between(x, bending, alpha=0.3, color="salmon")
+            
+            for position in self.x_positions.tolist():
+                axes[0].axvline(position, ymax=0.4, linestyle="--", color="dimgrey")
+                axes[1].axvline(position, linestyle="--", color="dimgrey")
+                axes[2].axvline(position, linestyle="--", color="dimgrey")
+            
+            if save:
+                plt.savefig(self.strain_filename, dpi=800)
+                plt.close(fig)
+            else:
+                plt.show()
+        else:
+            if save:
+                plt.savefig(self.beam_filename, dpi=800)
+                plt.close(fig)
+            else:
+                plt.show()
 
     def _get_coordinates(self, center, L):
         x, y = center

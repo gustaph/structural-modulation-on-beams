@@ -61,9 +61,3 @@ class Beam:
         assert self.supports.__contains__(position), "Beam does not have a Support in position {position}."
         support = self.supports.pop(position)
         print(f"[*] {support} removed from Beam.")
-
-    def draw(self, save=False):
-        plot_object = Plot(self.L, self.supports, self.loads)
-        plot_object.draw(save)
-        
-        return plot_object.img_filename
