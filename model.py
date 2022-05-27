@@ -100,7 +100,6 @@ class Model:
         if count_valid[1] == 0:
             return positions[indices_pos_M], np.squeeze(matrix_bounds[indices_M])
         
-        print("AOOOBAAAA")
         indices = np.unique(np.array([indices_pos_M, indices_pos_V]))
         values = np.sort([
             np.squeeze(matrix_bounds[indices_M][0]),
@@ -200,13 +199,19 @@ class Model:
         
         best_positions, bounds = self._get_best_position(position_conditions)
         print("best_positions", best_positions)
-        print("bounds\n", bounds)
-        
+        print("bounds\n", bounds, "\n")
         constants = {}
-        for position in best_positions:
-            for bound in bounds:
+        
+        if best_positions.shape[0] == bounds.shape[1]:
+            for position, bound in zip(best_positions, bounds):
                 self.writer.write_dict_boundaries({bound[0]: bound[1]}, "L" if position == self.beam.L else position)
                 constants.update(self.solve_for_force(bound[0], equations, position, constants))
+                
+        else:        
+            for position in best_positions:
+                for bound in bounds:       
+                    self.writer.write_dict_boundaries({bound[0]: bound[1]}, "L" if position == self.beam.L else position)
+                    constants.update(self.solve_for_force(bound[0], equations, position, constants))
             
         print(constants)
         
@@ -215,14 +220,14 @@ class Model:
             
 
 if __name__ == '__main__':
-    # b = Beam(5.0)
-    # b.remove_support(0.0)
-    # b.add_support(Support(0.0, SupportTypes.pinned))
-    # b.add_support(Support(5.0, SupportTypes.pinned))
-    # b.add_load(Load(-100, LoadTypes.uniformlyDistributed, 2, end=5))
+    b = Beam(5.0)
+    b.remove_support(0.0)
+    b.add_support(Support(0.0, SupportTypes.pinned))
+    b.add_support(Support(5.0, SupportTypes.pinned))
+    b.add_load(Load(-100, LoadTypes.uniformlyDistributed, 2, end=5))
     
-    b = Beam(0.5)
-    b.add_load(Load(-1000, LoadTypes.centered, 0.3))
+    # b = Beam(0.5)
+    # b.add_load(Load(-1000, LoadTypes.centered, 0.3))
     
     # b.draw(False)
     
