@@ -236,16 +236,8 @@ class Model:
         
 
 if __name__ == '__main__':
-    b = Beam(5.0)
-    b.remove_support(0.0)
-    b.add_support(Support(0.0, SupportTypes.pinned))
-    b.add_support(Support(5.0, SupportTypes.pinned))
-    b.add_load(Load(-100, LoadTypes.uniformlyDistributed, 2, end=5))
-    
-    # b = Beam(0.5)
-    # b.add_load(Load(-1000, LoadTypes.centered, 0.3))
-    
-    # b.draw(False)
+    b = Beam(3.0)
+    b.add_load(Load(-2, LoadTypes.uniformlyVarying, 0, end=3))
     
     model = Model(b)
     model.solve()
