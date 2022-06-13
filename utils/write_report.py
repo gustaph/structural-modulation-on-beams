@@ -1,8 +1,7 @@
 import numpy as np
-from pyparsing import line
 import sympy as sym
 from datetime import datetime
-from os import linesep, path
+from os import linesep
 
 
 class Writer:
@@ -45,7 +44,7 @@ class Writer:
             for eq in equation:
                 report.write(self._format_equation(eq, box, center))
 
-    def add_image(self, dir: str, scale_width: float = "100%"):
+    def add_image(self, dir: str, scale_width: str = "100%"):
         with open(self.file, 'a') as report:
             report.write(f'<p align="center"><img src={str(dir)} width={str(scale_width)}/></p>')
 
@@ -57,7 +56,3 @@ class Writer:
         equations = "$$" + ' \qquad \qquad '.join(equations) + "$$"
         
         self.write_content(f"> {equations}")
-        
-    
-    def generate(self):
-        pass

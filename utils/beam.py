@@ -1,7 +1,7 @@
-from load import Load, LoadTypes
-from support import Support, SupportTypes
-from plot_beam import Plot
 from typing import Tuple
+
+from .load import Load, LoadTypes
+from .support import Support, SupportTypes
 
 
 class Beam:
@@ -27,7 +27,7 @@ class Beam:
     def _validate_load_input(self, start: float, end: float):
         if self.taken_positions == []:
             return True
-        end = start if end is None else end
+        end = end if end else start
 
         for position in self.taken_positions:
             validate = self._is_intersection((start, end), position)
@@ -36,17 +36,19 @@ class Beam:
 
         return True
 
-    def add_load(self, load: Load) -> None:
+    def add_load(self, load) -> None:
         assert 0.0 <= load.start <= self.L, f"{load} position must be within the limits of the beam."
         if load.end:
             assert 0.0 <= load.end <= self.L, f"{load} position must be within the limits of the beam."
-        assert self._validate_load_input(load.start, load.end), f"There is another load between position {(load.start, load.end)}."
-        self.taken_positions.append((load.start, load.end if load.end else load.start))
+        #assert self._validate_load_input(load.start, load.end), f"There is another load between position {(load.start, load.end)}."
+        if not load.end:
+            load.end = load.start
+        self.taken_positions.append((load.start, load.end))
         self.loads.append(load)
 
     def add_support(self, support: Support) -> None:        
-        if (support.category == SupportTypes.fixed) and support.position in (0.0, self.L):
-            raise ValueError(f"A FIXED support can only be added at the edges of the beam.")
+        # if (support.category == SupportTypes.fixed) and support.position in (0.0, self.L):
+        #     raise ValueError(f"A FIXED support can only be added at the edges of the beam.")
         assert 0 <= support.position <= self.L, f"{support} position must be within the limits of the beam."
         assert not self.supports.__contains__(support.position), f"Position {support.position} already has a support"
         self.supports[support.position] = support

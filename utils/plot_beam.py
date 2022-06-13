@@ -1,11 +1,12 @@
-import matplotlib.pyplot as plt
-from matplotlib import patches
 import numpy as np
-from support import Support, SupportTypes
-from load import Load, LoadTypes
 from typing import List
+from matplotlib import patches
+import matplotlib.pyplot as plt
 from datetime import datetime
 from itertools import cycle
+
+from .support import Support, SupportTypes
+from .load import Load, LoadTypes
 
 
 # Hyperparameters
@@ -27,11 +28,11 @@ Y_DISTANCE = 0.20 * HEIGHT
 
 N_ARROWS_SCALE = 2
 ARROW_WIDTH_PERCENT = 0.04
-UNIF_VAR_SLOPE = 0.1
+UNIF_VAR_SLOPE = 0.2
 
 
 class Plot:
-    def __init__(self, L: float, supports: List[Support], loads: List[Load]):
+    def __init__(self, L: float, supports: List[Support], loads: List[Load], app: bool = False):
         self.L = L
         self.supports = supports.values()
         self.loads = loads
@@ -39,8 +40,12 @@ class Plot:
         self.ax_beam = None
         
         now = datetime.now().strftime('%Y%d%d%H%M')
-        self.beam_filename = f"plots/beam/plot_{now}.jpg"
-        self.strain_filename = f"plots/strain/plot_{now}.jpg"
+        self.beam_filename = f"../plots/beam/plot_{now}.jpg"
+        self.strain_filename = f"../plots/strain/plot_{now}.jpg"
+        
+        if app:
+            self.beam_filename = self.beam_filename[3:]
+            self.strain_filename = self.strain_filename[3:]
     
     def plot_model(self, internal_strain=None, save=False):
         plot_complete_model = False
@@ -88,6 +93,7 @@ class Plot:
             else:
                 plt.show()
         else:
+            axes[0].set_yticks([])
             if save:
                 plt.savefig(self.beam_filename, dpi=800)
                 plt.close(fig)
@@ -118,7 +124,7 @@ class Plot:
 
                 x = [value[0] + next(penalty) for value in coords]
                 y = [value[1] - scale_y/5 for value in coords]
-                plt.scatter(x, y, s=65, color=SECONDARY_COLOR)
+                ax.scatter(x, y, s=65, color=SECONDARY_COLOR)
 
             elif support.category == SupportTypes.pinned:
                 _ = self._draw_triangle((support.position, -0.025), self.L, ax)
@@ -176,10 +182,10 @@ class Plot:
                 arrow_positions = np.linspace(load.start, load.end, n_arrows)
 
                 ax.plot([load.start, load.end],
-                        [Y_DISTANCE-UNIF_VAR_SLOPE, Y_DISTANCE+UNIF_VAR_SLOPE],
+                        [0, Y_DISTANCE+UNIF_VAR_SLOPE],
                         color=ARROW_COLOR, lw=3)
                 
-                lengths = np.linspace(Y_DISTANCE-UNIF_VAR_SLOPE, Y_DISTANCE+UNIF_VAR_SLOPE, n_arrows)
+                lengths = np.linspace(0, Y_DISTANCE+UNIF_VAR_SLOPE, n_arrows)
 
                 arrows = [patches.Arrow(x=position, y=length, dx=0, dy=-length,
                                         color=ARROW_COLOR, width=ARROW_WIDTH_PERCENT * self.L)

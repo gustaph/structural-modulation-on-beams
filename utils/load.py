@@ -32,4 +32,5 @@ class Load:
             self.category = LoadTypes.centered
 
     def __repr__(self):
-        return f"Load([{self.start}{':' + str(self.end) if self.end else ''}], {self.magnitude})"
+        # return f"Load([{self.start}{':' + str(self.end) if self.end else ''}], {self.magnitude})"
+        return f"Load([{self.start}:{self.end}], {self.magnitude})"
