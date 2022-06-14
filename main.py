@@ -3,7 +3,7 @@ from utils.beam import Beam
 from utils.load import Load, LoadTypes
 from utils.support import Support, SupportTypes
 
-# EXEMPLO SIMPLES
+# SIMPLE EXAMPLE FOR TESTING
 b = Beam(L=0.5)
 b.add_load(Load(-1000, LoadTypes.centered, 0.3))
 model = Model(b, app=True)
