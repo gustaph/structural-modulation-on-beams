@@ -93,7 +93,7 @@ class Plot:
             else:
                 plt.show()
         else:
-            axes[0].set_yticks([])
+            # axes[0].set_yticks([])
             if save:
                 plt.savefig(self.beam_filename, dpi=800)
                 plt.close(fig)
@@ -132,11 +132,11 @@ class Plot:
             elif support.category == SupportTypes.fixed:
                 alpha = 0.0
                 if support.position == self.L:
-                    alpha = -WIDTH/2
+                    alpha = SUPP_FIXED_WIDTH_SCALE * self.L
 
-                patch = patches.Rectangle((support.position + alpha, -HEIGHT/2),
+                patch = patches.Rectangle((support.position + alpha, -HEIGHT * 0.2),
                                           width=-SUPP_FIXED_WIDTH_SCALE * self.L,
-                                          height=HEIGHT, hatch=HATCH_SUPPORTS,
+                                          height=HEIGHT * 0.45, hatch=HATCH_SUPPORTS,
                                           fill=False)
                 patch_elements.append(patch)
 
