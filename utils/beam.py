@@ -10,7 +10,7 @@ class Beam:
 
     def __init__(self, L: float):
         self.L = float(L)
-        self.supports = {0.0: Support(0.0, SupportTypes.fixed)}
+        self.supports = {}#{0.0: Support(0.0, SupportTypes.fixed)}
         self.loads = list()
         self.taken_positions = list()
 
@@ -27,39 +27,45 @@ class Beam:
     def _validate_load_input(self, start: float, end: float):
         if self.taken_positions == []:
             return True
+        
         end = end if end else start
 
         for position in self.taken_positions:
-            validate = self._is_intersection((start, end), position)
-            if validate:
+            if self._is_intersection((start, end), position):
                 return False
 
         return True
 
-    def add_load(self, load) -> None:
+    def add_load(self, load: Load) -> None:
+        """
+        """
         assert 0.0 <= load.start <= self.L, f"{load} position must be within the limits of the beam."
         if load.end:
             assert 0.0 <= load.end <= self.L, f"{load} position must be within the limits of the beam."
-        #assert self._validate_load_input(load.start, load.end), f"There is another load between position {(load.start, load.end)}."
+        
         if not load.end:
             load.end = load.start
         self.taken_positions.append((load.start, load.end))
         self.loads.append(load)
 
     def add_support(self, support: Support) -> None:        
-        # if (support.category == SupportTypes.fixed) and support.position in (0.0, self.L):
-        #     raise ValueError(f"A FIXED support can only be added at the edges of the beam.")
+        """
+        """
         assert 0 <= support.position <= self.L, f"{support} position must be within the limits of the beam."
         assert not self.supports.__contains__(support.position), f"Position {support.position} already has a support"
         self.supports[support.position] = support
 
     def remove_load(self, position: Tuple) -> None:
+        """
+        """
         assert position in self.taken_positions, "Beam does not have a Load in position {position}."
         index = self.taken_positions.index(position)
         del self.loads[index]
         del self.taken_positions[index]
 
     def remove_support(self, position: float) -> None:
+        """
+        """
         assert self.supports.__contains__(position), "Beam does not have a Support in position {position}."
         support = self.supports.pop(position)
         print(f"[*] {support} removed from Beam.")

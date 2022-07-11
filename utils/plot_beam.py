@@ -43,9 +43,9 @@ class Plot:
         self.beam_filename = f"../plots/beam/plot_{now}.jpg"
         self.strain_filename = f"../plots/strain/plot_{now}.jpg"
         
-        if app:
-            self.beam_filename = self.beam_filename[3:]
-            self.strain_filename = self.strain_filename[3:]
+        # if app:
+        #     self.beam_filename = self.beam_filename[3:]
+        #     self.strain_filename = self.strain_filename[3:]
     
     def plot_model(self, internal_strain=None, save=False):
         plot_complete_model = False

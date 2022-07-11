@@ -107,7 +107,7 @@ def main():
             model.solve()
         
         with open(model.writer.file, "r") as f:
-            st.markdown(f.read())
+            st.markdown(f.read(), unsafe_allow_html=True)
             
     # st.stop()
     

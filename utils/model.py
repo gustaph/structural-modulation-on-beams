@@ -149,8 +149,8 @@ class Model:
         symbolic_M = symbolic_M(x)
 
         self.plotter.plot_model(save=True)
-        self.writer.add_image(self.plotter.beam_filename, scale_width="90%")
-        self.writer.write_content(" ")
+        # self.writer.add_image(self.plotter.beam_filename, scale_width="90%")
+        # self.writer.write_content(" ")
 
         self.writer.add_section("1. Mechanical behavior", level=2)
         beam_loads = ", ".join(["**" + load.category.value.upper() + "**"
@@ -242,5 +242,5 @@ class Model:
         internal_strain = (x_points, function_v_x(x_points), function_m_x(x_points))
 
         self.plotter.plot_model(internal_strain, save=True)
-        self.writer.add_image(self.plotter.strain_filename)
-        self.writer.write_content(" ")
+        # self.writer.add_image(self.plotter.strain_filename)
+        # self.writer.write_content(" ")

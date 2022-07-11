@@ -1,4 +1,3 @@
-import numpy as np
 import sympy as sym
 from datetime import datetime
 from os import linesep
