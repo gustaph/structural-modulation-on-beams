@@ -8,8 +8,10 @@ class Beam:
     """
     """
 
-    def __init__(self, L: float):
+    def __init__(self, h: float, L: float, I: float = 0.0):
+        self.h = float(h)
         self.L = float(L)
+        self.I = float(I)
         self.supports = {}#{0.0: Support(0.0, SupportTypes.fixed)}
         self.loads = list()
         self.taken_positions = list()
