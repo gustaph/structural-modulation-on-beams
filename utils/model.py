@@ -9,20 +9,24 @@ from collections import ChainMap
 
 BOUNDARY_CONDITIONS = {
     SupportTypes.fixed: {
-        "M": "?",
-        "V": "?"
+        "V": "?",  # bending
+        "M": "?",  # shear
+        "v": 0.0   # displacement
     },
     SupportTypes.roller: {
+        "V": "?",
         "M": 0.0,
-        "V": "?"
+        "v": 0.0
     },
     SupportTypes.pinned: {
+        "V": "?",
         "M": 0.0,
-        "V": "?"
+        "v": 0.0
     },
     "free": {
+        "V": 0.0,
         "M": 0.0,
-        "V": 0.0
+        "v": "?"
     }
 }
 
@@ -42,14 +46,17 @@ class Model:
         self.beam = beam
         self.bound_conds = bound_conds
         self.plotter = Plot(self.beam.L, self.beam.supports, self.beam.loads, app)
-        self.q, self.M, self.V = self._define_equations()
+        self.q, self.M, self.V, self.O, self.v = self._define_equations()
 
     def _define_equations(self):
 
         x = sym.Symbol("x")
-        q = sym.Function("q")(x)
-        V = sym.Function("V")(x)
-        M = sym.Function("M")(x)
+        q = sym.Function("q")(x)  # load
+        V = sym.Function("V")(x)  # shear
+        M = sym.Function("M")(x)  # bending
+        O = sym.Function("O")(x)  # angle
+        v = sym.Function("v")(x)  # displacement
+        
 
         functions = 0.0
         for load in self.beam.loads:
@@ -60,9 +67,11 @@ class Model:
 
         q = sym.Eq(q, functions)
         V = sym.dsolve(sym.Eq(V.diff(x), functions))
-        M = sym.dsolve(sym.Eq(M.diff(x, x), functions))
+        M = sym.dsolve(sym.Eq(M.diff(x), V.args[1]))
+        O = sym.dsolve(sym.Eq(O.diff(x), M.args[1]))
+        v = sym.dsolve(sym.Eq(v.diff(x), O.args[1]))
 
-        return q, M, V
+        return q, M, V, O, v
 
     def _get_best_position(self, dict_values):
         """
@@ -79,35 +88,22 @@ class Model:
         """
 
         dict_conditions = [condition[1] for condition in dict_values]
-        values = np.array([list(value.values()) for value in dict_conditions])
-        print("VALUES:\n", values)
-        main_condition = (values != "?")
+        values = np.array([[v if v != "?" else np.nan for v in value.values()] for value in dict_conditions])
+        n_vars = len(dict_conditions[0].keys())
+        main_condition = ~np.isnan(values)
 
-        valid_values = np.sum(main_condition)
-        if valid_values <= 1:
-            return [None, None]
+        if np.sum(main_condition) < n_vars:
+            return np.repeat(np.nan, n_vars).tolist()
 
         # 1st CASE: TWO VALUES IN ONE POSITION
-        indices = np.argwhere(main_condition.all(axis=1)).flatten()
+        indices = np.argwhere(main_condition.all(1)).flatten()
         if len(indices) > 0:
             return np.array(dict_values)[indices[0]]
 
         # 2nd CASE: VALUES IN DIFFERENT POSITIONS
-        column_split = np.hsplit(main_condition, 2)
-
-        if not any(column_split[0]):
-            indices = np.where(column_split[1] == np.amax(column_split[1]))[0][:2]
-
-        elif not any(column_split[1]):
-            indices = np.where(column_split[0] == np.amax(column_split[0]))[0][:2]
-
-        else:
-            indices = [np.argmax(column_split[0]), np.argmax(column_split[1])]
-
-        if len(indices) <= 1:
-            return [None, None]
-
-        return np.array(dict_values)[indices[:2]]
+        if np.sum(main_condition) >= n_vars:
+            indices = np.argwhere(main_condition.any(1)).flatten()
+            return np.array(dict_values)[indices]
 
     def solve_for_force(self, force: str, equations: dict, position: int, value_force: int, subs={}):
         x = sym.Symbol("x")
@@ -142,11 +138,13 @@ class Model:
     def solve(self):
 
         # Variables & Functions
-        x, c1, c2 = sym.symbols("x C(1:3)")
-        symbolic_q, symbolic_V, symbolic_M = sym.symbols("q V M", cls=sym.Function)
+        x = sym.symbols("x")
+        symbolic_q, symbolic_V, symbolic_M, symbolic_O, symbolic_v = sym.symbols("q V M O v", cls=sym.Function)
         symbolic_q = symbolic_q(x)
         symbolic_V = symbolic_V(x)
         symbolic_M = symbolic_M(x)
+        symbolic_O = symbolic_O(x)
+        symbolic_v = symbolic_v(x)
 
         self.plotter.plot_model(save=True)
         # self.writer.add_image(self.plotter.beam_filename, scale_width="90%")
@@ -206,7 +204,8 @@ class Model:
         self.writer.write_equation([sym.latex(m_x)], box=True)
         self.writer.write_content("---")
 
-        equations = {"M": m_x, "V": v_x}
+        equations = {"M": self.M, "V": self.V,
+                     "O": self.O, "v": self.v}
 
         print("POSITION CONDITIONS")
         print(position_conditions)
@@ -231,16 +230,28 @@ class Model:
         self.writer.add_section("4. Model plot", level=2)
 
         modules = [{"SingularityFunction": lambda x, a, e: (x - a) ** e * (x > a)}, "numpy"]
-        final_v_x = v_x.subs(constants)
-        final_m_x = m_x.subs(constants)
-        function_v_x = sym.lambdify(x, expr=final_v_x.args[1], modules=modules)
-        function_m_x = sym.lambdify(x, expr=final_m_x.args[1], modules=modules)
+        v_x = self.V.subs(constants)
+        m_x = self.M.subs(constants)
+        o_x = self.O.subs(constants)
+        vv_x = self.v.subs(constants)
+        
+        function_v_x = sym.lambdify(x, expr=v_x.args[1], modules=modules)
+        function_m_x = sym.lambdify(x, expr=m_x.args[1], modules=modules)
+        function_o_x = sym.lambdify(x, expr=o_x.args[1], modules=modules)
+        function_vv_x = sym.lambdify(x, expr=vv_x.args[1], modules=modules)
+        
+        x_points = np.linspace(0, self.beam.L, 10 * round(np.abs(100 * np.log(self.beam.L)) / 10))
+        y_points = np.linspace(-self.beam.h/2, self.beam.h/2, len(x_points))
+        
+        mesh_x, mesh_y = np.meshgrid(x_points, y_points)
+        
+        final_vx = function_v_x(x_points)
+        final_mx = function_m_x(x_points)
+        final_ox = function_o_x(x_points)
+        final_vvx = function_vv_x(x_points)
+        
+        inertia = (final_mx * mesh_y) / self.beam.I
 
-        self.writer.write_equation([sym.latex(final_m_x) + "; \qquad " + sym.latex(final_v_x)], box=True)
-
-        x_points = np.linspace(0, self.beam.L, int(self.beam.L * 100))
-        internal_strain = (x_points, function_v_x(x_points), function_m_x(x_points))
-
-        self.plotter.plot_model(internal_strain, save=True)
+        # self.plotter.plot_model(internal_strain, save=True)
         # self.writer.add_image(self.plotter.strain_filename)
         # self.writer.write_content(" ")
