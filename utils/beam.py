@@ -41,9 +41,9 @@ class Beam:
     def add_load(self, load: Load) -> None:
         """
         """
-        assert 0.0 <= load.start <= self.L, f"{load} position must be within the limits of the beam."
-        if load.end:
-            assert 0.0 <= load.end <= self.L, f"{load} position must be within the limits of the beam."
+        # assert 0.0 <= load.start <= self.L, f"{load} position must be within the limits of the beam."
+        # if load.end:
+        #     assert 0.0 <= load.end <= self.L, f"{load} position must be within the limits of the beam."
         
         if not load.end:
             load.end = load.start
@@ -53,7 +53,7 @@ class Beam:
     def add_support(self, support: Support) -> None:        
         """
         """
-        assert 0 <= support.position <= self.L, f"{support} position must be within the limits of the beam."
+        # assert 0 <= support.position <= self.L, f"{support} position must be within the limits of the beam."
         assert not self.supports.__contains__(support.position), f"Position {support.position} already has a support"
         self.supports[support.position] = support
 

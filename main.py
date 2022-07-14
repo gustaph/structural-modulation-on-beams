@@ -9,8 +9,9 @@ beam.add_support(Support(0.0, SupportTypes.pinned))
 beam.add_support(Support(4.0, SupportTypes.pinned))
 beam.add_load(Load(-100, LoadTypes.uniformlyDistributed, 0.0, 4.0))
 model = ModelCli(beam)
-(x, y), (mesh_x, mesh_y), internal_strain, inertia = model.solve()
-fig = model.plot_results((x, y), (mesh_x, mesh_y), internal_strain, inertia)
+print(model.solve())
+# _, (x, y), (mesh_x, mesh_y), internal_strain, inertia = model.solve()
+# fig = model.plot_results((x, y), (mesh_x, mesh_y), internal_strain, inertia)
 
 # # Q1
 # beam = Beam(L=5)

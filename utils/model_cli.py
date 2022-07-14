@@ -175,7 +175,7 @@ class ModelCli:
         
         inertia = (final_mx * mesh_y) / self.beam.I
         
-        return ((x_points, y_points), (mesh_x, mesh_y), (final_vx, final_mx, final_ox, final_vvx), inertia)
+        return constants, ((x_points, y_points), (mesh_x, mesh_y), (final_vx, final_mx, final_ox, final_vvx), inertia)
     
     def plot_results(self, xy, mesh_xy, internal_strain, inertia):
         return self.plotter.plot_model(xy, mesh_xy, internal_strain, inertia)
