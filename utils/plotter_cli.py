@@ -36,19 +36,19 @@ class PlotterCli:
         ax_dict["A"].plot(x, vx, color="blue", label="$V(x)$")
         ax_dict["A"].fill_between(x, vx, alpha=0.3, color="royalblue")
         ax_dict["A"].legend()
-        print("V(x)", f"Max: {round(vx[np.abs(vx).argmax()], 2)}\tPos: {round(x[np.abs(vx).argmax()], 2)}")
+        print("V(x)", f"Max: {round(vx[np.abs(vx).argmax()], 2)} \t\t Pos: {round(x[np.abs(vx).argmax()], 2)}")
 
         ax_dict["B"].set_title("Bending-Moment [$M(x)$]")
         ax_dict["B"].plot(x, mx, color="red", label="$M(x)$")
         ax_dict["B"].fill_between(x, mx, alpha=0.3, color="salmon")
         ax_dict["B"].legend(loc="lower left")
-        print("M(x)", f"Max: {round(mx[np.abs(mx).argmax()], 2)}\tPos: {round(x[np.abs(mx).argmax()], 2)}")
+        print("M(x)", f"Max: {round(mx[np.abs(mx).argmax()], 2)} \t\t Pos: {round(x[np.abs(mx).argmax()], 2)}")
 
         ax_dict["C"].set_title("Angle [$\epsilon$]")
         ax_dict["C"].plot(x, ox, color="orange", label="$\\theta(x)$")
         ax_dict["C"].fill_between(x, ox, alpha=0.3, color="gold")
         ax_dict["C"].legend()
-        print("O(x)", f"Max: {round(ox[np.abs(ox).argmax()], 2)}\tPos: {round(x[np.abs(ox).argmax()], 2)}")
+        print("O(x)", f"Max: {round(ox[np.abs(ox).argmax()], 2)} \t\t Pos: {round(x[np.abs(ox).argmax()], 2)}")
 
         ax_dict["D"].set_title("Displacement [$\\nu(x)$]")
         ax_dict["D"].plot(x, vvx, color="limegreen", label="$\\nu(x)$")
@@ -57,7 +57,7 @@ class PlotterCli:
                         bbox=dict(facecolor='white', edgecolor='black'))
         ax_dict["D"].fill_between(x, vvx, alpha=0.3, color="springgreen")
         ax_dict["D"].legend(loc="lower left")
-        print("v(x)", f"Max: {round(vvx[np.abs(vvx).argmax()], 2)}\tPos: {round(x[np.abs(vvx).argmax()], 2)}")
+        print("v(x)", f"Max: {round(vvx[np.abs(vvx).argmax()], 2)} \t\t Pos: {round(x[np.abs(vvx).argmax()], 2)}")
 
         ax_dict["E"].set_title("Tension [$\sigma_{zz}$]")
         self._plot_contour_labels(ax_dict["E"], mesh_x, mesh_y, inertia)

@@ -11,21 +11,25 @@ BOUNDARY_CONDITIONS = {
     SupportTypes.fixed: {
         "V": "?",  # bending
         "M": "?",  # shear
+        "O": 0.0,  # angle
         "v": 0.0   # displacement
     },
     SupportTypes.roller: {
         "V": "?",
         "M": 0.0,
+        "O": "?",
         "v": 0.0
     },
     SupportTypes.pinned: {
         "V": "?",
         "M": 0.0,
+        "O": "?",
         "v": 0.0
     },
     "free": {
         "V": 0.0,
         "M": 0.0,
+        "O": "?",
         "v": "?"
     }
 }
@@ -69,6 +73,8 @@ class ModelCli:
         M = sym.dsolve(sym.Eq(M.diff(x), V.args[1]))
         O = sym.dsolve(sym.Eq(O.diff(x), M.args[1]))
         v = sym.dsolve(sym.Eq(v.diff(x), O.args[1]))
+        
+        print("q(x): ", q)
 
         return q, M, V, O, v
 
